@@ -11,7 +11,16 @@ const store = {
   userAnswers: [],
   feedback: null,
   sessionToken,
-}
+
+  resetStore(){
+    this.page = 'intro';
+    this.currentQuestionIndex = null;
+    this.userAnswers = [];
+    this.feedback = null;
+    this.sessionToken;
+  }
+
+};
 
 
 
@@ -28,17 +37,17 @@ let QUESTIONS = [];
 // entire session
 let sessionToken;
 
-const getInitialStore = function(){
-  return {
-    page: 'intro',
-    currentQuestionIndex: null,
-    userAnswers: [],
-    feedback: null,
-    sessionToken,
-  };
-};
+// const getInitialStore = function(){
+//   return {
+//     page: 'intro',
+//     currentQuestionIndex: null,
+//     userAnswers: [],
+//     feedback: null,
+//     sessionToken,
+//   };
+// };
 
-let store = getInitialStore();
+// let store = getInitialStore();
 
 // Helper functions
 // ===============
