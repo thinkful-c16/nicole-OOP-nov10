@@ -17,7 +17,6 @@ const store = {
     this.currentQuestionIndex = null;
     this.userAnswers = [];
     this.feedback = null;
-    this.sessionToken;
   },
 
   getScore () {
@@ -35,43 +34,87 @@ const store = {
   getProgress () {
     return {
       current: this.currentQuestionIndex + 1,
-      total: QUESTIONS.length
+      total: questions.QUESTIONS.length
     };
   },
 
   getCurrentQuestion() {
-    return QUESTIONS[this.currentQuestionIndex];
+    return questions.QUESTIONS[this.currentQuestionIndex];
   },
  
   getQuestion(index) {
-    return QUESTIONS[index];
+    return questions.QUESTIONS[index];
+  },
+};
+
+const api = {
+  BASE_API_URL: 'https://opentdb.com',
+  TOP_LEVEL_COMPONENTS: [
+    'js-intro', 'js-question', 'js-question-feedback', 
+    'js-outro', 'js-quiz-status'
+  ],
+  
+  buildBaseUrl(amt = 10, query = {}) {
+    const url = new URL(this.BASE_API_URL + '/api.php');
+    const queryKeys = Object.keys(query);
+    url.searchParams.set('amount', amt);
+
+    if (store.sessionToken) {
+      url.searchParams.set('token', store.sessionToken);
+    }
+
+    queryKeys.forEach(key => url.searchParams.set(key, query[key]));
+    return url;
+  },
+
+  buildTokenUrl() {
+    return new URL(this.BASE_API_URL + '/api_token.php');
+  },
+
+  fetchToken(callback) {
+    if (store.sessionToken) {
+      return callback();
+    }
+
+    const url = this.buildTokenUrl();
+    url.searchParams.set('command', 'request');
+
+    $.getJSON(url, res => {
+      store.sessionToken = res.token;
+      callback();
+    }, err => console.log(err));
+  },
+};
+
+const questions = {
+  QUESTIONS: [],
+
+  fetchQuestions(amt, query, callback) {
+    $.getJSON(api.buildBaseUrl(amt, query), callback, err => console.log(err.message));
+  },
+
+  seedQuestions(questions) {
+    this.QUESTIONS.length = 0;
+    questions.forEach(q => this.QUESTIONS.push(createQuestion(q)));
+  },
+  
+  fetchAndSeedQuestions(amt, query, callback) {
+    fetchQuestions(amt, query, res => {
+      seedQuestions(res.results);
+      callback();
+    });
+  },
+
+  createQuestion(question) {
+    return {
+      text: question.question,
+      answers: [ ...question.incorrect_answers, question.correct_answer ],
+      correctAnswer: question.correct_answer
+    };
   },
 };
 
 
-const BASE_API_URL = 'https://opentdb.com';
-const TOP_LEVEL_COMPONENTS = [
-  'js-intro', 'js-question', 'js-question-feedback', 
-  'js-outro', 'js-quiz-status'
-];
-
-let QUESTIONS = [];
-
-// token is global because store is reset between quiz games, but token should persist for 
-// entire session
-// let sessionToken;
-
-// const getInitialStore = function(){
-//   return {
-//     page: 'intro',
-//     currentQuestionIndex: null,
-//     userAnswers: [],
-//     feedback: null,
-//     sessionToken,
-//   };
-// };
-
-// let store = getInitialStore();
 
 // Helper functions
 // ===============
@@ -79,99 +122,6 @@ const hideAll = function() {
   TOP_LEVEL_COMPONENTS.forEach(component => $(`.${component}`).hide());
 };
 
-
-//api
-const buildBaseUrl = function(amt = 10, query = {}) {
-  const url = new URL(BASE_API_URL + '/api.php');
-  const queryKeys = Object.keys(query);
-  url.searchParams.set('amount', amt);
-
-  if (store.sessionToken) {
-    url.searchParams.set('token', store.sessionToken);
-  }
-
-  queryKeys.forEach(key => url.searchParams.set(key, query[key]));
-  return url;
-};
-
-//api
-const buildTokenUrl = function() {
-  return new URL(BASE_API_URL + '/api_token.php');
-};
-
-//api
-const fetchToken = function(callback) {
-  if (store.sessionToken) {
-    return callback();
-  }
-
-  const url = buildTokenUrl();
-  url.searchParams.set('command', 'request');
-
-  $.getJSON(url, res => {
-    store.sessionToken = res.token;
-    callback();
-  }, err => console.log(err));
-};
-
-//api
-const fetchQuestions = function(amt, query, callback) {
-  $.getJSON(buildBaseUrl(amt, query), callback, err => console.log(err.message));
-};
-
-//api
-const seedQuestions = function(questions) {
-  QUESTIONS.length = 0;
-  questions.forEach(q => QUESTIONS.push(createQuestion(q)));
-};
-
-//api
-const fetchAndSeedQuestions = function(amt, query, callback) {
-  fetchQuestions(amt, query, res => {
-    seedQuestions(res.results);
-    callback();
-  });
-};
-
-//api
-const createQuestion = function(question) {
-  return {
-    text: question.question,
-    answers: [ ...question.incorrect_answers, question.correct_answer ],
-    correctAnswer: question.correct_answer
-  };
-};
-
-// //store
-// const getScore = function() {
-//   return store.userAnswers.reduce((accumulator, userAnswer, index) => {
-//     const question = getQuestion(index);
-
-//     if (question.correctAnswer === userAnswer) {
-//       return accumulator + 1;
-//     } else {
-//       return accumulator;
-//     }
-//   }, 0);
-// };
-
-// //store
-// const getProgress = function() {
-//   return {
-//     current: store.currentQuestionIndex + 1,
-//     total: QUESTIONS.length
-//   };
-// };
-
-// //store
-// const getCurrentQuestion = function() {
-//   return QUESTIONS[store.currentQuestionIndex];
-// };
-
-// //store
-// const getQuestion = function(index) {
-//   return QUESTIONS[index];
-// };
 
 // HTML generator functions
 // ========================
@@ -215,11 +165,11 @@ const render = function() {
   let html;
   hideAll();
 
-  const question = getCurrentQuestion();
+  const question = store.getCurrentQuestion();
   const { feedback } = store; 
-  const { current, total } = getProgress();
+  const { current, total } = store.getProgress();
 
-  $('.js-score').html(`<span>Score: ${getScore()}</span>`);
+  $('.js-score').html(`<span>Score: ${store.getScore()}</span>`);
   $('.js-progress').html(`<span>Question ${current} of ${total}`);
 
   switch (store.page) {
@@ -254,7 +204,7 @@ const render = function() {
 // Event handler functions
 // =======================
 const handleStartQuiz = function() {
-  store = getInitialStore();
+  store.resetStore;
   store.page = 'question';
   store.currentQuestionIndex = 0;
   const quantity = parseInt($('#js-question-quantity').find(':selected').val(), 10);
@@ -265,7 +215,7 @@ const handleStartQuiz = function() {
 
 const handleSubmitAnswer = function(e) {
   e.preventDefault();
-  const question = getCurrentQuestion();
+  const question = store.getCurrentQuestion();
   const selected = $('input:checked').val();
   store.userAnswers.push(selected);
   
