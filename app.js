@@ -10,7 +10,7 @@ const store = {
   currentQuestionIndex: null,
   userAnswers: [],
   feedback: null,
-  sessionToken,
+  sessionToken: '',
 
   resetStore(){
     this.page = 'intro';
@@ -18,11 +18,35 @@ const store = {
     this.userAnswers = [];
     this.feedback = null;
     this.sessionToken;
-  }
+  },
 
+  getScore () {
+    return this.userAnswers.reduce((accumulator, userAnswer, index) => {
+      const question = this.getQuestion(index);
+
+      if (question.correctAnswer === userAnswer) {
+        return accumulator + 1;
+      } else {
+        return accumulator;
+      }
+    }, 0);
+  },
+
+  getProgress () {
+    return {
+      current: this.currentQuestionIndex + 1,
+      total: QUESTIONS.length
+    };
+  },
+
+  getCurrentQuestion() {
+    return QUESTIONS[this.currentQuestionIndex];
+  },
+ 
+  getQuestion(index) {
+    return QUESTIONS[index];
+  },
 };
-
-
 
 
 const BASE_API_URL = 'https://opentdb.com';
@@ -35,7 +59,7 @@ let QUESTIONS = [];
 
 // token is global because store is reset between quiz games, but token should persist for 
 // entire session
-let sessionToken;
+// let sessionToken;
 
 // const getInitialStore = function(){
 //   return {
@@ -77,7 +101,7 @@ const buildTokenUrl = function() {
 
 //api
 const fetchToken = function(callback) {
-  if (sessionToken) {
+  if (store.sessionToken) {
     return callback();
   }
 
@@ -85,7 +109,7 @@ const fetchToken = function(callback) {
   url.searchParams.set('command', 'request');
 
   $.getJSON(url, res => {
-    sessionToken = res.token;
+    store.sessionToken = res.token;
     callback();
   }, err => console.log(err));
 };
@@ -118,36 +142,36 @@ const createQuestion = function(question) {
   };
 };
 
-//store
-const getScore = function() {
-  return store.userAnswers.reduce((accumulator, userAnswer, index) => {
-    const question = getQuestion(index);
+// //store
+// const getScore = function() {
+//   return store.userAnswers.reduce((accumulator, userAnswer, index) => {
+//     const question = getQuestion(index);
 
-    if (question.correctAnswer === userAnswer) {
-      return accumulator + 1;
-    } else {
-      return accumulator;
-    }
-  }, 0);
-};
+//     if (question.correctAnswer === userAnswer) {
+//       return accumulator + 1;
+//     } else {
+//       return accumulator;
+//     }
+//   }, 0);
+// };
 
-//store
-const getProgress = function() {
-  return {
-    current: store.currentQuestionIndex + 1,
-    total: QUESTIONS.length
-  };
-};
+// //store
+// const getProgress = function() {
+//   return {
+//     current: store.currentQuestionIndex + 1,
+//     total: QUESTIONS.length
+//   };
+// };
 
-//store
-const getCurrentQuestion = function() {
-  return QUESTIONS[store.currentQuestionIndex];
-};
+// //store
+// const getCurrentQuestion = function() {
+//   return QUESTIONS[store.currentQuestionIndex];
+// };
 
-//store
-const getQuestion = function(index) {
-  return QUESTIONS[index];
-};
+// //store
+// const getQuestion = function(index) {
+//   return QUESTIONS[index];
+// };
 
 // HTML generator functions
 // ========================
