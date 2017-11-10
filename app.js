@@ -1,5 +1,21 @@
 'use strict';
 
+//pseudocode for OOP refactoring
+//Class Store: runs when a new 'store' is initiated
+//Class Components: runs whenever we render/hide/show elements on index.html
+//Class API: runs when we get the questions from the API
+
+const store = {
+  page: 'intro',
+  currentQuestionIndex: null,
+  userAnswers: [],
+  feedback: null,
+  sessionToken,
+}
+
+
+
+
 const BASE_API_URL = 'https://opentdb.com';
 const TOP_LEVEL_COMPONENTS = [
   'js-intro', 'js-question', 'js-question-feedback', 
@@ -30,6 +46,8 @@ const hideAll = function() {
   TOP_LEVEL_COMPONENTS.forEach(component => $(`.${component}`).hide());
 };
 
+
+//api
 const buildBaseUrl = function(amt = 10, query = {}) {
   const url = new URL(BASE_API_URL + '/api.php');
   const queryKeys = Object.keys(query);
@@ -43,10 +61,12 @@ const buildBaseUrl = function(amt = 10, query = {}) {
   return url;
 };
 
+//api
 const buildTokenUrl = function() {
   return new URL(BASE_API_URL + '/api_token.php');
 };
 
+//api
 const fetchToken = function(callback) {
   if (sessionToken) {
     return callback();
@@ -61,15 +81,18 @@ const fetchToken = function(callback) {
   }, err => console.log(err));
 };
 
+//api
 const fetchQuestions = function(amt, query, callback) {
   $.getJSON(buildBaseUrl(amt, query), callback, err => console.log(err.message));
 };
 
+//api
 const seedQuestions = function(questions) {
   QUESTIONS.length = 0;
   questions.forEach(q => QUESTIONS.push(createQuestion(q)));
 };
 
+//api
 const fetchAndSeedQuestions = function(amt, query, callback) {
   fetchQuestions(amt, query, res => {
     seedQuestions(res.results);
@@ -77,6 +100,7 @@ const fetchAndSeedQuestions = function(amt, query, callback) {
   });
 };
 
+//api
 const createQuestion = function(question) {
   return {
     text: question.question,
@@ -85,6 +109,7 @@ const createQuestion = function(question) {
   };
 };
 
+//store
 const getScore = function() {
   return store.userAnswers.reduce((accumulator, userAnswer, index) => {
     const question = getQuestion(index);
@@ -97,6 +122,7 @@ const getScore = function() {
   }, 0);
 };
 
+//store
 const getProgress = function() {
   return {
     current: store.currentQuestionIndex + 1,
@@ -104,10 +130,12 @@ const getProgress = function() {
   };
 };
 
+//store
 const getCurrentQuestion = function() {
   return QUESTIONS[store.currentQuestionIndex];
 };
 
+//store
 const getQuestion = function(index) {
   return QUESTIONS[index];
 };
