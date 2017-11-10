@@ -1,9 +1,5 @@
 'use strict';
-
-//pseudocode for OOP refactoring
-//Class Store: runs when a new 'store' is initiated
-//Class Components: runs whenever we render/hide/show elements on index.html
-//Class API: runs when we get the questions from the API
+/*global $*/
 
 const store = {
   page: 'intro',
@@ -95,12 +91,12 @@ const questions = {
 
   seedQuestions(questions) {
     this.QUESTIONS.length = 0;
-    questions.forEach(q => this.QUESTIONS.push(createQuestion(q)));
+    questions.forEach(q => this.QUESTIONS.push(this.createQuestion(q)));
   },
   
   fetchAndSeedQuestions(amt, query, callback) {
-    fetchQuestions(amt, query, res => {
-      seedQuestions(res.results);
+    this.fetchQuestions(amt, query, res => {
+      this.seedQuestions(res.results);
       callback();
     });
   },
@@ -114,144 +110,138 @@ const questions = {
   },
 };
 
+const rendering = {
+  hideAll() {
+    api.TOP_LEVEL_COMPONENTS.forEach(component => $(`.${component}`).hide());
+  },
 
-
-// Helper functions
-// ===============
-const hideAll = function() {
-  TOP_LEVEL_COMPONENTS.forEach(component => $(`.${component}`).hide());
-};
-
-
-// HTML generator functions
-// ========================
-const generateAnswerItemHtml = function(answer) {
-  return `
-    <li class="answer-item">
-      <input type="radio" name="answers" value="${answer}" />
-      <span class="answer-text">${answer}</span>
-    </li>
-  `;
-};
-
-const generateQuestionHtml = function(question) {
-  const answers = question.answers
-    .map((answer, index) => generateAnswerItemHtml(answer, index))
-    .join('');
-
-  return `
-    <form>
-      <fieldset>
-        <legend class="question-text">${question.text}</legend>
-          ${answers}
-          <button type="submit">Submit</button>
-      </fieldset>
-    </form>
-  `;
-};
-
-const generateFeedbackHtml = function(feedback) {
-  return `
-    <p>
-      ${feedback}
-    </p>
-    <button class="continue js-continue">Continue</button>
-  `;
-};
-
-// Render function - uses `store` object to construct entire page every time it's run
-// ===============
-const render = function() {
-  let html;
-  hideAll();
-
-  const question = store.getCurrentQuestion();
-  const { feedback } = store; 
-  const { current, total } = store.getProgress();
-
-  $('.js-score').html(`<span>Score: ${store.getScore()}</span>`);
-  $('.js-progress').html(`<span>Question ${current} of ${total}`);
-
-  switch (store.page) {
-  case 'intro':
-    $('.js-intro').show();
-    break;
-    
-  case 'question':
-    html = generateQuestionHtml(question);
-    $('.js-question').html(html);
-    $('.js-question').show();
-    $('.quiz-status').show();
-    break;
-
-  case 'answer':
-    html = generateFeedbackHtml(feedback);
-    $('.js-question-feedback').html(html);
-    $('.js-question-feedback').show();
-    $('.quiz-status').show();
-    break;
-
-  case 'outro':
-    $('.js-outro').show();
-    $('.quiz-status').show();
-    break;
-
-  default:
-    return;
-  }
-};
-
-// Event handler functions
-// =======================
-const handleStartQuiz = function() {
-  store.resetStore;
-  store.page = 'question';
-  store.currentQuestionIndex = 0;
-  const quantity = parseInt($('#js-question-quantity').find(':selected').val(), 10);
-  fetchAndSeedQuestions(quantity, { type: 'multiple' }, () => {
-    render();
-  });
-};
-
-const handleSubmitAnswer = function(e) {
-  e.preventDefault();
-  const question = store.getCurrentQuestion();
-  const selected = $('input:checked').val();
-  store.userAnswers.push(selected);
+  render() {
+    let html;
+    this.hideAll();
   
-  if (selected === question.correctAnswer) {
-    store.feedback = 'You got it!';
-  } else {
-    store.feedback = `Too bad! The correct answer was: ${question.correctAnswer}`;
-  }
-
-  store.page = 'answer';
-  render();
+    const question = store.getCurrentQuestion();
+    const { feedback } = store; 
+    const { current, total } = store.getProgress();
+  
+    $('.js-score').html(`<span>Score: ${store.getScore()}</span>`);
+    $('.js-progress').html(`<span>Question ${current} of ${total}`);
+  
+    switch (store.page) {
+    case 'intro':
+      $('.js-intro').show();
+      break;
+      
+    case 'question':
+      html = templates.generateQuestionHtml(question);
+      $('.js-question').html(html);
+      $('.js-question').show();
+      $('.quiz-status').show();
+      break;
+  
+    case 'answer':
+      html = templates.generateFeedbackHtml(feedback);
+      $('.js-question-feedback').html(html);
+      $('.js-question-feedback').show();
+      $('.quiz-status').show();
+      break;
+  
+    case 'outro':
+      $('.js-outro').show();
+      $('.quiz-status').show();
+      break;
+  
+    default:
+      return;
+    }
+  },
 };
 
-const handleNextQuestion = function() {
-  if (store.currentQuestionIndex === QUESTIONS.length - 1) {
-    store.page = 'outro';
-    render();
-    return;
-  }
+const templates = {
+  generateAnswerItemHtml(answer) {
+    return `
+      <li class="answer-item">
+        <input type="radio" name="answers" value="${answer}" />
+        <span class="answer-text">${answer}</span>
+      </li>
+    `;
+  },
 
-  store.currentQuestionIndex++;
-  store.page = 'question';
-  render();
+  generateQuestionHtml(question) {
+    const answers = question.answers
+      .map((answer, index) => this.generateAnswerItemHtml(answer, index))
+      .join('');
+
+    return `
+      <form>
+        <fieldset>
+          <legend class="question-text">${question.text}</legend>
+            ${answers}
+            <button type="submit">Submit</button>
+        </fieldset>
+      </form>
+    `;
+  },
+
+  generateFeedbackHtml(feedback) {
+    return `
+      <p>
+        ${feedback}
+      </p>
+      <button class="continue js-continue">Continue</button>
+    `;
+  },
+};
+
+const handlers = {
+  handleStartQuiz() {
+    store.resetStore;
+    store.page = 'question';
+    store.currentQuestionIndex = 0;
+    const quantity = parseInt($('#js-question-quantity').find(':selected').val(), 10);
+    questions.fetchAndSeedQuestions(quantity, { type: 'multiple' }, () => {
+      rendering.render();
+    });
+  },
+
+  handleSubmitAnswer(e) {
+    e.preventDefault();
+    const question = store.getCurrentQuestion();
+    const selected = $('input:checked').val();
+    store.userAnswers.push(selected);
+    
+    if (selected === question.correctAnswer) {
+      store.feedback = 'You got it!';
+    } else {
+      store.feedback = `Too bad! The correct answer was: ${question.correctAnswer}`;
+    }
+    store.page = 'answer';
+    rendering.render();
+  },
+
+  handleNextQuestion() {
+    if (store.currentQuestionIndex === questions.QUESTIONS.length - 1) {
+      store.page = 'outro';
+      rendering.render();
+      return;
+    }
+
+    store.currentQuestionIndex++;
+    store.page = 'question';
+    rendering.render();
+  }
 };
 
 // On DOM Ready, run render() and add event listeners
 $(() => {
   // Run first render
-  render();
+  rendering.render();
 
   // Fetch session token, enable Start button when complete
-  fetchToken(() => {
+  api.fetchToken(() => {
     $('.js-start').attr('disabled', false);
   });
 
-  $('.js-intro, .js-outro').on('click', '.js-start', handleStartQuiz);
-  $('.js-question').on('submit', handleSubmitAnswer);
-  $('.js-question-feedback').on('click', '.js-continue', handleNextQuestion);
+  $('.js-intro, .js-outro').on('click', '.js-start', handlers.handleStartQuiz);
+  $('.js-question').on('submit', handlers.handleSubmitAnswer);
+  $('.js-question-feedback').on('click', '.js-continue', handlers.handleNextQuestion);
 });
