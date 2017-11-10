@@ -40,44 +40,40 @@ class Store {
 }
 const store = new Store();
 
-const api = {
-  BASE_API_URL: 'https://opentdb.com',
-  TOP_LEVEL_COMPONENTS: [
-    'js-intro', 'js-question', 'js-question-feedback', 
-    'js-outro', 'js-quiz-status'
-  ],
-  
+class API {
+  constructor() {
+    this.BASE_API_URL = 'https://opentdb.com';
+    this.TOP_LEVEL_COMPONENTS = [
+      'js-intro', 'js-question', 'js-question-feedback', 
+      'js-outro', 'js-quiz-status'
+    ];
+  }
   buildBaseUrl(amt = 10, query = {}) {
     const url = new URL(this.BASE_API_URL + '/api.php');
     const queryKeys = Object.keys(query);
     url.searchParams.set('amount', amt);
-
     if (store.sessionToken) {
       url.searchParams.set('token', store.sessionToken);
-    }
-
+    }  
     queryKeys.forEach(key => url.searchParams.set(key, query[key]));
     return url;
-  },
-
+  }
   buildTokenUrl() {
     return new URL(this.BASE_API_URL + '/api_token.php');
-  },
-
+  } 
   fetchToken(callback) {
     if (store.sessionToken) {
       return callback();
     }
-
     const url = this.buildTokenUrl();
     url.searchParams.set('command', 'request');
-
     $.getJSON(url, res => {
       store.sessionToken = res.token;
       callback();
     }, err => console.log(err));
-  },
-};
+  }
+}
+const api = new API();
 
 const questions = {
   QUESTIONS: [],
