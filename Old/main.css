@@ -1,0 +1,13 @@
+div {
+  padding: 10px;
+  
+}
+
+.form-holder, .image, .message {
+        border: solid black 1px;
+  }
+
+.hidden{
+    display: none;
+}
+
