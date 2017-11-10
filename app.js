@@ -18,7 +18,6 @@ const store = {
   getScore () {
     return this.userAnswers.reduce((accumulator, userAnswer, index) => {
       const question = this.getQuestion(index);
-
       if (question.correctAnswer === userAnswer) {
         return accumulator + 1;
       } else {
@@ -194,7 +193,7 @@ const templates = {
 
 const handlers = {
   handleStartQuiz() {
-    store.resetStore;
+    store.resetStore();
     store.page = 'question';
     store.currentQuestionIndex = 0;
     const quantity = parseInt($('#js-question-quantity').find(':selected').val(), 10);
@@ -231,16 +230,12 @@ const handlers = {
   }
 };
 
-// On DOM Ready, run render() and add event listeners
-$(() => {
-  // Run first render
-  rendering.render();
 
-  // Fetch session token, enable Start button when complete
+$(() => {
+  rendering.render();
   api.fetchToken(() => {
     $('.js-start').attr('disabled', false);
   });
-
   $('.js-intro, .js-outro').on('click', '.js-start', handlers.handleStartQuiz);
   $('.js-question').on('submit', handlers.handleSubmitAnswer);
   $('.js-question-feedback').on('click', '.js-continue', handlers.handleNextQuestion);
