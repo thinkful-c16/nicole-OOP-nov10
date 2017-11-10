@@ -1,20 +1,20 @@
 'use strict';
 /*global $*/
 
-const store = {
-  page: 'intro',
-  currentQuestionIndex: null,
-  userAnswers: [],
-  feedback: null,
-  sessionToken: '',
-
+class Store {
+  constructor() {
+    this.page = 'intro',
+    this.currentQuestionIndex = null,
+    this.userAnswers = [],
+    this.feedback = null,
+    this.sessionToken = '';
+  }
   resetStore(){
     this.page = 'intro';
     this.currentQuestionIndex = null;
     this.userAnswers = [];
     this.feedback = null;
-  },
-
+  }
   getScore () {
     return this.userAnswers.reduce((accumulator, userAnswer, index) => {
       const question = this.getQuestion(index);
@@ -24,23 +24,21 @@ const store = {
         return accumulator;
       }
     }, 0);
-  },
-
+  }
   getProgress () {
     return {
       current: this.currentQuestionIndex + 1,
       total: questions.QUESTIONS.length
     };
-  },
-
+  }
   getCurrentQuestion() {
     return questions.QUESTIONS[this.currentQuestionIndex];
-  },
- 
+  }
   getQuestion(index) {
     return questions.QUESTIONS[index];
-  },
-};
+  }
+}
+const store = new Store();
 
 const api = {
   BASE_API_URL: 'https://opentdb.com',
@@ -229,7 +227,6 @@ const handlers = {
     rendering.render();
   }
 };
-
 
 $(() => {
   rendering.render();
